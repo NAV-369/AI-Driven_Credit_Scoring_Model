@@ -1,77 +1,93 @@
-# Task 2: Exploratory Data Analysis (EDA)
+# Task 3: Feature Engineering
 
 ## Overview
-This task involves a thorough examination of the dataset to understand its structure, distributions, and relationships. The goal is to uncover insights that will guide subsequent steps in the machine learning pipeline.
+Feature engineering transforms raw data into more predictive features, crucial for enhancing model performance in credit risk assessment.
 
 ## Objectives
 
-- **Understand Data Structure:** Determine the number of rows, columns, and data types within the dataset.
-- **Summary Statistics:** Calculate central tendency, dispersion, and distribution shapes.
-- **Distribution of Features:** Visualize both numerical and categorical feature distributions.
-- **Correlation Analysis:** Identify relationships between numerical variables.
-- **Identify Missing Values:** Spot and strategize handling of missing data.
-- **Detect Outliers:** Use various plots to identify anomalies in the data.
+- Create aggregate features to summarize customer behavior.
+- Extract time-based features to capture temporal patterns.
+- Encode categorical variables for machine learning compatibility.
+- Handle missing values to maintain data quality.
+- Normalize or standardize numerical features for consistent scaling.
+- Implement WOE and IV for feature transformation and selection.
 
-## Data Overview
+## Implementation Details
 
-- **Dataset:** Found in `./data/transactions.csv`
-- **Rows:** [Number of rows if known]
-- **Columns:** [Number of columns if known]
+### # Create Aggregate Features
+- **Total Transaction Amount:** Sum of transactions per customer.
+  ```python
+  df['TotalTransactionAmount'] = df.groupby('AccountId')['Amount'].transform('sum')
+Average Transaction Amount: Mean transaction amount per customer.
+python
+df['AverageTransactionAmount'] = df.groupby('AccountId')['Amount'].transform('mean')
+Transaction Count: Number of transactions per customer.
+python
+df['TransactionCount'] = df.groupby('AccountId')['TransactionId'].transform('count')
+Standard Deviation of Transaction Amounts: Variability in transaction amounts.
+python
+df['StdTransactionAmount'] = df.groupby('AccountId')['Amount'].transform('std')
 
-## Summary Statistics
+# Extract Features
+Time-Based Features: From transaction timestamps for pattern analysis.
+python
+df['TransactionStartTime'] = pd.to_datetime(df['TransactionStartTime'])
+df['TransactionHour'] = df['TransactionStartTime'].dt.hour
+df['TransactionDay'] = df['TransactionStartTime'].dt.day
+df['TransactionMonth'] = df['TransactionStartTime'].dt.month
+df['TransactionYear'] = df['TransactionStartTime'].dt.year
 
-- **Central Tendency:** Measures like mean, median for numerical features.
-- **Dispersion:** Standard deviation, variance.
-- **Shape:** Skewness, kurtosis.
+# Encode Categorical Variables
+One-Hot Encoding: For ChannelId.
+python
+df = pd.get_dummies(df, columns=['ChannelId'], prefix=['Channel'])
+Label Encoding: For ProductCategory when necessary.
+python
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df['ProductCategory_encoded'] = le.fit_transform(df['ProductCategory'])
 
-## Distribution Analysis
+# Handle Missing Values
+Imputation: Mean or mode strategy.
+python
+from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(strategy='mean')
+df[numerical_columns] = imputer.fit_transform(df[numerical_columns])
+Removal: If the missing data is insignificant.
 
-### Numerical Features
-- **Histograms:** To show distribution shapes, skewness, and potential outliers.
-- **Q-Q Plots:** To check for normality.
+# Normalize/Standardize Numerical Features
+Normalization: To scale between 0 and 1.
+python
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+df[numerical_features] = scaler.fit_transform(df[numerical_features])
+Standardization: To center around 0 with unit variance.
+python
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+df[numerical_features] = scaler.fit_transform(df[numerical_features])
 
-### Categorical Features
-- **Bar Charts:** To visualize the frequency of categories.
+# Feature Engineering with WOE and IV
+Weight of Evidence (WOE) and Information Value (IV): For feature enhancement and selection.
+python
+def woe_iv(X, y, event=1):
+    # Simplified WOE/IV calculation
+    ...
+X = df['ProductCategory']
+y = df['FraudResult']
+woe_df = woe_iv(X, y)
+df = df.merge(woe_df['WOE'], left_on='ProductCategory', right_index=True, how='left', suffixes=('', '_WOE'))
 
-## Correlation Analysis
+### How to Use
+Jupyter Notebook: Execute ./notebooks/03_feature_engineering.ipynb for this task's code.
+Interpret: Review visualizations and statistics for insights.
 
-- **Heatmap:** To illustrate correlations between numerical variables.
+### Next Steps
+Model Training: Utilize these features in credit risk models.
+Feature Selection: Prioritize based on IV for model inclusion.
 
-## Missing Values
+### References
+WOE and IV Explanation (link_to_woe_iv_explanation)
+Feature Engineering Techniques (link_to_feature_engineering)
 
-- **Heatmap of Missing Data:** Visual representation of missing data distribution across features.
-- **Count of Missing Values:** Numerical summary of missing data.
-
-## Outlier Detection
-
-- **Box Plots:** To identify outliers in numerical features.
-
-## Insights and Decisions
-
-- **Data Quality:** Observations on data integrity, including skewness, outliers, and missing values.
-- **Feature Relationships:** Insights into how features correlate with each other.
-- **Next Steps:** Decisions on data preprocessing, feature engineering based on EDA findings.
-
-## Jupyter Notebook
-
-- **Location:** `./notebooks/02_exploratory_data_analysis.ipynb`
-- **Content:** All EDA steps are documented with code, visualizations, and commentary.
-
-## How to Use
-
-1. **Open Notebook:** Navigate to `./notebooks/` and open `02_exploratory_data_analysis.ipynb` in Jupyter.
-2. **Run Cells:** Execute each cell to see the EDA in action or review the results already produced.
-3. **Interpret Results:** Use the insights from this notebook to inform your approach in the next tasks.
-
-## References
-
-- [Seaborn Documentation](https://seaborn.pydata.org/)
-- [Pandas Documentation](https://pandas.pydata.org/docs/)
-- [Matplotlib Documentation](https://matplotlib.org/stable/contents.html)
-
-## Next Steps
-
-- **Feature Engineering:** Based on EDA, engineer new features or transform existing ones.
-- **Model Building:** Use EDA findings to guide model selection and feature importance.
-
-This task lays the groundwork for a data-driven approach to credit scoring model development. The insights gained here are pivotal for making informed decisions in the subsequent stages of our project.
+```
